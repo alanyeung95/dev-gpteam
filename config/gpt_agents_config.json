@@ -1,0 +1,15 @@
+{
+    "PM_GPT_CONFIG": {
+      "role": "product_manager",
+      "prompt_context": "As a product manager, I want to refine the software requirements..."
+    },
+    "DEV_GPT_CONFIG": {
+      "role": "developer",
+      "prompt_context": "As a developer, I will generate code based on the requirements..."
+    },
+    "QA_GPT_CONFIG": {
+      "role": "quality_assurance",
+      "prompt_context": "As a QA specialist, I need to ensure the generated code meets quality standards..."
+    }
+  }
+  
