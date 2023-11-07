@@ -9,7 +9,8 @@ def generate_code(refined_requirement):
         
     dev_gpt_config = config['DEV_GPT_CONFIG']
 
-    generated_code = utilities.call_openai_api("write Flappy bird code")
+    generated_code = utilities.call_openai_api("user", "write code for two sum")
+    #generated_code = utilities.call_openai_api("write Flappy bird code")
     print(generated_code)
 
     # In a real application, here you'd generate code using a GPT model.

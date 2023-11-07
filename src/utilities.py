@@ -1,18 +1,25 @@
 import http.client
 import json
+import os
 
-def call_openai_api(prompt):
-    conn = http.client.HTTPSConnection("api.openai.com")
+from dotenv import load_dotenv
 
-    api_key = "your-api-key"  # Make sure to keep your API keys secure
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') 
+OPENAI_API_ENDPOINT = os.getenv('OPENAI_API_ENDPOINT') 
+print(OPENAI_API_ENDPOINT)
+def call_openai_api(role, prompt):
+    conn = http.client.HTTPSConnection(OPENAI_API_ENDPOINT)
+
     payload = json.dumps({
         "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": prompt}]
+        "messages": [{"role": role, "content": prompt}]
     })
 
     headers = {
         'Content-Type': "application/json",
-        'Authorization': f"Bearer {api_key}"
+        'Authorization': f"Bearer {OPENAI_API_KEY}"
     }
 
     conn.request("POST", "/v1/chat/completions", payload, headers)
