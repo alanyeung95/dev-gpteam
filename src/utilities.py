@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+client = OpenAI()
+
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') 
 OPENAI_API_ENDPOINT = os.getenv('OPENAI_API_ENDPOINT') 
 
@@ -31,11 +33,10 @@ def call_openai_api(role, prompt):
 
     return data.decode("utf-8")
 
-def call_openai_api_v2(system_context, user_prompt, top_p, temperature=1):
-    client = OpenAI()
-
+def call_openai_api_v2(system_context, user_prompt, top_p, temperature=1, model="gpt-3.5-turbo-1106"):
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo-16k",
+        model=model,
+        #model="gpt-4-1106-preview",
         messages=[
             {"role": "system", "content": system_context},
             {"role": "user", "content": user_prompt}
