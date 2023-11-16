@@ -1,12 +1,27 @@
 import json
 import os
 import utilities
-from time import sleep
 
-from openai import OpenAI
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') 
-OPENAI_API_ENDPOINT = os.getenv('OPENAI_API_ENDPOINT') 
-client = OpenAI()
+PM_GPT_SYSTEM_CONTEXT="""Role: You are a project manager specializing in mini-game software development, focusing on detailed gameplay mechanics for desktop applications. Here's how you operate:
+
+1. **Initial Concept Discussion with Client**: Engage with clients to understand their initial game idea, including genre, target audience, and envisioned features. Assume the game's platform is a desktop application and confirm this with the client. Monetization and social features should be discussed only if specifically requested by the client.
+
+2. **Detailed Information Clarifying and Gathering with Client**: Ask precise questions to clarify the game's genre, target audience, key features, and unique elements.
+
+3. **Clarifying and Listing Gameplay Mechanics with Client**: After initial discussions, delve deeper into gameplay mechanics with the client. Ask for specifics on elements like player progression, challenges, objectives, control schemes, and interaction mechanics. Then, list at least five detailed gameplay mechanics as understood from the client's vision, including aspects like game initialization, scoring systems, and ending conditions.
+
+4. **Refining and Confirmation with Client**: Analyze responses and refine the understanding with further detailed inquiries. Summarize the updated understanding, with detailed gameplay mechanics, and seek a clear confirmation from the client to end the requirement clarifying process.
+
+5. **Finalizing Requirements with Development Team**: After confirming the requirements with the client, translate the ideas into structured technical requirements for the development team. Use the following format:
+
+<REQ_START>
+# one line summary of the game
+```
+# Number list of requirements
+```
+<REQ_END>
+
+Avoid discussing technical details with the client in the earlier steps. Repeat steps 2 to 4 as necessary, based on the client's inputs and confirmations, until clear and detailed gameplay mechanics are established. This iterative process ensures a comprehensive understanding of the client’s vision."""
 
 def extract_req(text):
     start_marker = "<REQ_START>"
@@ -25,78 +40,26 @@ def extract_req(text):
     # Extract the part of the string between the markers
     return text[start_index:end_index]
 
+
 # src/pm_gpt.py
 def refine_requirements(initial_requirement):
-    with open('config/gpt_agents_config.json', 'r') as config_file:
-        config = json.load(config_file)
-        
-    dev_gpt_config = config['PM_GPT_CONFIG']
-
-    ## create/retrieve assistant
-    # assistant = client.beta.assistants.create(
-    #     name=dev_gpt_config["role"],
-    #     instructions=dev_gpt_config["prompt_context"],
-    #     tools=[],
-    #     model= "gpt-3.5-turbo-1106" #"gpt-4-1106-preview" # gpt-4 is better, but 3.5 is accaptable 
-    # )
-    assistant = client.beta.assistants.retrieve("asst_yWhWMtivHAQNUwH4f8pIY8Hu") # this is a established 3.5 assistant
-
-    thread = client.beta.threads.create()
-    message = client.beta.threads.messages.create(
-        thread_id=thread.id,
-        role="user",
-        content=initial_requirement
-    )
+    messages = [
+        {"role": "system", "content": PM_GPT_SYSTEM_CONTEXT},
+        {"role": "user", "content": initial_requirement}
+    ]
     print("user: " + initial_requirement)
-
-
-    # iteratively clarify requirements until client satisfies
     while True:
-        # run the assistant
-        run = client.beta.threads.runs.create(
-            thread_id=thread.id,
-            assistant_id=assistant.id
-        )
-        # print(run)
-
-        # check run status. wait until finish
-        finish = False
-        while not finish: 
-            run = client.beta.threads.runs.retrieve(
-                thread_id=thread.id,
-                run_id=run.id
-            )
-            finish = run.status == "completed"
-            sleep(3) # not a good practice but useful
-
-        # get message list
-        messages = client.beta.threads.messages.list(
-            thread_id=thread.id
-        )
-        # for msg in reversed(messages.data):
-        #     print(msg.role + ": " + msg.content[0].text.value)
-
-        # print latest message
-        response =  messages.data[0].content[0].text.value
-        print(messages.data[0].role + ": " + response)
+        response = utilities.call_openai_api_PM(messages, model="gpt-4-1106-preview")
+        messages.append({"role": "assistant", "content": response})        
 
         # if the assistant repsonse contains the final requirement, break clarifying loop
         if "<REQ_START>" in response:
             refined_requirement = extract_req(response)
             break
+        print("assistant: " + response)
         
         # else, continue iteration
         user_input = input("user: ")
-        client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=user_input
-        )
+        messages.append({"role": "user", "content": user_input})
 
     return refined_requirement
-
-
-if __name__ == "__main__":
-    refined_requirement = refine_requirements("I want to build a flappy bird game")
-    print("Requirements:")
-    print(refined_requirement)
