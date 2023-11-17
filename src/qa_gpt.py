@@ -280,7 +280,7 @@ def validate_code(generated_code):
     # In a real application, here you'd validate code using a GPT model.
     print("Validating code...\n")
 
-    response = utilities.call_openai_api_v2(QA_GPT_SYSTEM_CONTEXT, input, 0.1, 0.1)
+    response = utilities.call_openai_api_DEV(QA_GPT_SYSTEM_CONTEXT, input, 0.1, 0.1)
     code_string = response.choices[0].message.content
     
     print(response.choices[0].message.content)
