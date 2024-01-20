@@ -1,0 +1,15 @@
+GPT input:
+Create a python green brick breaker game where the ball doubles in size and turns red for 5 seconds when it hits red bricks.
+
+Requirements:
+
+1. Brick Layout: The game should start with bricks arranged in a specific pattern, consisting of rows and columns, on the screen. These bricks should be colored green and red.
+2. Paddle Control: Players must have the ability to control a paddle's horizontal movement using keyboard, mouse, or touch inputs.
+3. Ball Mechanics: The ball should bounce off walls, the paddle, and bricks, obeying realistic physics principles for reflection angles.
+4. Power-Ups: Power-ups should have a time limit.
+5. Brick Collision: When the ball collides with a brick, that brick should disappear, and the player’s score should increase.
+6. Lives: The game begins with a certain number of lives. Each time the ball passes the paddle and touches the bottom edge of the screen, the player loses a life.
+7. Game Over Condition: The game ends when all bricks are broken (winning condition) or the player loses all lives (losing condition).
+8. User Interface: The game interface should display the current score, the number of lives remaining, and any relevant instructions or buttons (e.g., 'Start', 'Restart').
+9. Ball and Paddle Speed: The movement speeds of the ball and paddle should be adjusted to match human reaction times, ensuring that the game remains challenging, fair, and playable.
+10. User Control: Players can start the game by clicking the mouse or pressing a designated key on the keyboard.

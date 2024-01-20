@@ -1,2 +1,5 @@
 python-dotenv
 openai
+pygame
+rich
+numpy

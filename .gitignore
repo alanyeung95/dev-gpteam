@@ -1,4 +1,6 @@
 *.pyc
 .env
+.DS_STore
 
 workspace/*
+local/

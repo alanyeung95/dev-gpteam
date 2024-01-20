@@ -1,47 +1,95 @@
+import sys
+import argparse
+import json
+import os
+
 import pm_gpt
 import dev_gpt
 import qa_gpt
+import utilities
+from utilities import color
 
 def main():
-    print("Welcome to Dev GPTeam!")
-    initial_requirement = input("Please enter your initial software requirement: ")
-    
-    refined_requirement = pm_gpt.refine_requirements(initial_requirement)
+    refined_requirement = None
+    generated_code = None
+    snapshot_project_name = None
 
-    # tmp_requirement="""
-    # Generate code for this requirement: create a brick Breaker game.
+    parser = argparse.ArgumentParser(description="Usage:")
 
-    # Requirement:
-    # Brick Layout: The game must initialize with bricks arranged in a specific pattern (rows and columns) on the screen.
-    # Paddle Control: Players should be able to control the horizontal movement of a paddle using keyboard, mouse, or touch inputs.
-    # Ball Mechanics: A ball must bounce off walls, the paddle, and bricks, following proper physics for reflection angles.
-    # Brick Collision: When the ball collides with a brick, the brick should disappear, and the player's score should increase.
-    # Lives: The game should start with a predetermined number of lives. A life is lost when the ball passes the paddle and hits the bottom.
-    # Scoring System: The game must have a scoring system where points are awarded for breaking bricks.
-    # Game Over Condition: The game should end when either all bricks are broken (win) or the player loses all lives (lose).
-    # User Interface: The game should display the current score, number of lives, and any relevant instructions or buttons (e.g., start, restart).
-    # """
+    # Add arguments
+    parser.add_argument("--skipPM", action="store_true", help="Disable PM GPT (Code Review)")
+    parser.add_argument("--skipDev", action="store_true", help="Disable Dev GPT (Code Review)")
+    parser.add_argument("--skipQA", action="store_true", help="Disable QA GPT (Code Review)")
+    parser.add_argument("--snapshot-directory", type=str, help="Regenerate source code base on checkpoint file (.json)")
 
-    # print(refined_requirement)
-#     refined_requirement = """Classic Endless Brick Breaker Game
-# ```
-# # Requirements for the Classic Endless Brick Breaker Game
+    # Parse arguments
+    args = parser.parse_args()
 
-# 1. Implement an endless level design where new bricks are generated after the current set is cleared.
-# 2. Start the game with a single layer of bricks and a paddle at the bottom of the screen.
-# 3. Launch the ball from the center of the paddle after a short countdown or upon player action.
-# 4. Award points for each brick broken, with a continuous score accumulation and high score tracking.
-# 5. Provide the player with three lives, losing one each time the ball misses the paddle and hits the bottom.
-# 6. End the game when all lives are lost.
-# 7. Allow the player to control the paddle using mouse movement or keyboard arrow keys.
-# 8. Ensure the ball bounces off the paddle, walls, and bricks, destroying bricks upon impact.
-# 9. Incrementally increase difficulty by speeding up the ball or changing the brick layout as the game progresses.
-# 10. Exclude power-ups, bonuses, and additional features to maintain a classic gameplay experience.
-# ```"""
-    generated_code = dev_gpt.generate_code(refined_requirement)
-    #qa_gpt.validate_code(generated_code)
+    if args.snapshot_directory is not None:
+        snapshot_project_name = args.snapshot_directory
+        print(f"snapshot path is set to: {snapshot_project_name}")
 
-    print("Code generation completed!!!")
+        with open('workspace/{}/{}.json'.format(snapshot_project_name, snapshot_project_name), 'r') as file:
+            project = json.load(file)
+
+            refined_requirement, generated_code = project["refine_requirements"], project["developed_code"]
+
+    print(color.BOLD + color.PURPLE + "Welcome to Dev GPTeam!" + color.END)
+
+    # PM GPT clarifying requirements
+    if refined_requirement and (args.skipPM or args.skipDev):
+        print("Found project requirement from checkpoint file")
+    else:
+        print(color.BOLD + color.YELLOW + "assistant: " + color.END + "Please enter your initial requirement." )
+        initial_requirement = input(color.BOLD + color.GREEN + "user: " + color.END)
+        refined_requirement = pm_gpt.refine_requirements(initial_requirement)
+
+    print(color.BOLD + color.BLUE + "Finalized Requirements:\n" + color.END, end='')
+    utilities.print_message(refined_requirement)
+
+    # Dev GPT generating code
+    if generated_code and (args.skipDev):
+        print("Found generated from checkpoint file")
+    else:        
+        print(color.BOLD + color.PURPLE + "Generating code...\n" + color.END)
+        generated_code = dev_gpt.generate_code(refined_requirement)
+
+    print(color.BOLD + color.BLUE + "Generated code:\n" + color.END, end='')
+    utilities.print_message(generated_code)
+
+    # write requirements as snapshot in case the program crash during the code generation 
+    os.makedirs("tmp-dir", exist_ok=True)
+    utilities.take_project_info_snapshot(refined_requirement, None, None, "tmp-dir")
+
+    finalized_code = None 
+    game_path = None
+    if args.skipQA:
+        print("Not Using QA")
+
+        # only Dev Write to dir
+        game_path = utilities.parse_code(generated_code, "", snapshot_project_name)   
+        utilities.take_project_info_snapshot(refined_requirement, generated_code, None, snapshot_project_name)
+
+    else:
+        # Dev Write to dir
+        utilities.parse_code(generated_code, "-dev", snapshot_project_name)
+        utilities.take_project_info_snapshot(refined_requirement, generated_code, finalized_code, snapshot_project_name)
+
+        # QA GPT review code
+        print(color.BOLD + color.PURPLE + "Reviewing code...\n" + color.END)
+        finalized_code = qa_gpt.code_review(refined_requirement, generated_code)
+        print(color.BOLD + color.BLUE + "Code review feedback:\n" + color.END, end='')
+        utilities.print_message(finalized_code)
+
+        # QA Write to dir
+        game_path = utilities.parse_code(finalized_code, "", snapshot_project_name)
+        utilities.take_project_info_snapshot(refined_requirement, generated_code, finalized_code, snapshot_project_name)
+
+    # remove tmp directory
+    utilities.remove_directory("./workspace/tmp-dir")
+
+    print(color.BOLD + color.PURPLE + "Completed!!! Running the game." + color.END)   
+    utilities.run_game(game_path)
 
 if __name__ == "__main__":
     main()
