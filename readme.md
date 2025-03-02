@@ -59,7 +59,7 @@ python src/main.py
 Step 1: Display greeting message and receive sample user input.
 <br/><img src="assets/step1.png">
 
-Step 2: PM GPT requests additional information and receives sample user response 尸.
+Step 2: PM GPT requests additional information and receives sample user responses.
 <br/><img src="assets/step2.png">
 
 Step 3: PM GPT dive into the details for a more concrete requirement.
